@@ -1,0 +1,28 @@
+{
+  "name": "xp75-be",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harrychopra/xp75-be.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/harrychopra/xp75-be/issues"
+  },
+  "homepage": "https://github.com/harrychopra/xp75-be#readme",
+  "scripts": {},
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "16.4.5",
+    "express": "^5.2.1",
+    "pg": "^8.20.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
