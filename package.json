@@ -15,7 +15,9 @@
     "url": "https://github.com/harrychopra/xp75-be/issues"
   },
   "homepage": "https://github.com/harrychopra/xp75-be#readme",
-  "scripts": {},
+  "scripts": {
+    "dev": "nodemon ./src/app.js"
+  },
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "16.4.5",
