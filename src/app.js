@@ -4,6 +4,7 @@ import loadEnv from '../config/loadEnv.js';
 import errorHandler from './middleware/error.middleware.js';
 import apiRoutes from './routes/api.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import daysRoutes from './routes/days.routes.js';
 import profileRoutes from './routes/profile.routes.js';
 
 loadEnv();
@@ -16,6 +17,7 @@ app.use(express.json());
 app.use('/api', apiRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/days', daysRoutes);
 
 app.use(errorHandler);
 
