@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 
 import loadEnv from '../loadEnv.js';
 loadEnv();
-console.log(process.env);
+
 if (!process.env.PGDATABASE && !process.env.DATABASE_URL) {
   throw new Error(`PGDATABASE or DATABASE_URL not set`);
 }
