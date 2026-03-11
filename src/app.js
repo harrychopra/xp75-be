@@ -1,7 +1,9 @@
 import cors from 'cors';
 import express from 'express';
 import loadEnv from '../config/loadEnv.js';
+import errorHandler from './middleware/error.middleware.js';
 import apiRoutes from './routes/api.routes.js';
+import authRoutes from './routes/auth.routes.js';
 
 loadEnv();
 
@@ -11,6 +13,9 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/api', apiRoutes);
+app.use('/api/auth', authRoutes);
+
+app.use(errorHandler);
 
 const PORT = process.env.API_PORT || 9090;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
