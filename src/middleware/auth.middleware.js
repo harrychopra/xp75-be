@@ -8,7 +8,7 @@ export const authenticate = async (req, res, next) => {
 
   const token = authHeader.split(' ')[1];
 
-  const user = getById(token);
+  const user = await getById(token);
 
   if (!user) {
     return res.status(401).json({ error: 'Invalid token' });

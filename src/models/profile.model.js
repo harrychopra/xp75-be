@@ -18,8 +18,32 @@ export const getByEmail = async email => {
 
 export const getById = async id => {
   const { rows } = await db.query(
-    'SELECT * FROM profiles where email = $1',
+    'SELECT * FROM profiles where id = $1',
     [id]
   );
   return rows[0] || null;
+};
+
+export const update = async (id, fields) => {
+  const allowed = ['username', 'name', 'avatar_url'];
+  const updates = [];
+  const values = [];
+  let idx = 1;
+
+  for (const key of allowed) {
+    if (fields[key] !== undefined) {
+      updates.push(`${key} = $${idx++}`);
+      values.push(fields[key]);
+    }
+  }
+
+  if (!updates.length) return null;
+
+  values.push(id);
+  const { rows } = await db.query(
+    `UPDATE profiles SET ${updates.join(', ')} WHERE id = $${idx} RETURNING *`,
+    values
+  );
+
+  return rows[0];
 };
