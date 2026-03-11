@@ -13,7 +13,6 @@ export const getByEmail = async email => {
     'SELECT * FROM profiles where email = $1',
     [email]
   );
-  console.log(rows[0]);
   return rows[0] || null;
 };
 
