@@ -18,7 +18,7 @@ export const register = async (req, res, next) => {
     res.status(201).json(result);
   } catch (err) {
     if (err.code === '23505') {
-      err = new APIError('account already exists', 400);
+      err = new APIError('account already exists', 409);
     }
     next(err);
   }
