@@ -24,17 +24,14 @@ export const getById = async id => {
   return rows[0] || null;
 };
 
-export const update = async (id, fields) => {
-  const allowed = ['username', 'name', 'avatar_url'];
+export const update = async (id, profileData) => {
   const updates = [];
   const values = [];
   let idx = 1;
 
-  for (const key of allowed) {
-    if (fields[key] !== undefined) {
-      updates.push(`${key} = $${idx++}`);
-      values.push(fields[key]);
-    }
+  for (const [key, val] of Object.entries(profileData)) {
+    updates.push(`${key} = $${idx++}`);
+    values.push(val);
   }
 
   if (!updates.length) return null;
