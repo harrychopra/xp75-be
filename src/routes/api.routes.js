@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { getAPIVersion } from '../controllers/api.controllers.js';
+import {
+  getAPIVersion
+} from '../controllers/api.controllers.js';
 
 const router = Router();
-router.get('/', getAPIVersion);
-
+router.get('/version', getAPIVersion);
 export default router;
