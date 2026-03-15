@@ -78,7 +78,7 @@ npm install
 
 ### 3. Configure environment
 
-Create a `.env` file in the project root:
+Create a `.env.development` file in the project root:
 
 ```env
 PORT=3000
@@ -108,7 +108,6 @@ This runs `db/setup.js`, which executes `db/schema.sql` against the configured d
 
 ```bash
 npm run dev # development
-npm start # production
 ```
 
 The API will be available at `http://localhost:3000`.
