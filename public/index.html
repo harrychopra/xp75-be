@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>75XP Web API Reference</title>
+  <style>
+    body {
+      font-family: monospace;
+      max-width: 860px;
+      margin: 40px auto;
+      padding: 0 20px;
+      line-height: 1.6;
+      color: #111;
+      background: #fff;
+    }
+
+    h1 {
+      border-bottom: 2px solid #111;
+      padding-bottom: 8px;
+    }
+
+    h2 {
+      margin-top: 48px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 4px;
+    }
+
+    h3 {
+      margin-top: 32px;
+    }
+
+    .method {
+      display: inline-block;
+      font-weight: bold;
+      padding: 1px 6px;
+      border: 1px solid #111;
+      font-size: 0.85em;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    .endpoint {
+      font-size: 1.05em;
+      vertical-align: middle;
+    }
+
+    .status {
+      font-size: 0.85em;
+      padding: 1px 6px;
+      border: 1px solid #111;
+      display: inline-block;
+      margin: 6px 0;
+    }
+
+    .status.ok {
+      border-color: #2a7a2a;
+      color: #2a7a2a;
+    }
+
+    .status.err {
+      border-color: #a00;
+      color: #a00;
+    }
+
+    pre {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      padding: 12px 16px;
+      overflow-x: auto;
+      font-size: 0.9em;
+    }
+
+    code {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 0.2rem;
+      padding: 0.05rem 0.4rem;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 12px 0;
+      font-size: 0.9em;
+    }
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      padding: 7px 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #f0f0f0;
+    }
+
+    p.desc {
+      margin: 6px 0 14px 0;
+    }
+
+    .note {
+      font-size: 0.85em;
+      color: #555;
+      margin-top: 4px;
+    }
+
+    nav {
+      margin: 20px 0 40px 0;
+    }
+
+    nav a {
+      display: block;
+      margin: 3px 0;
+      text-decoration: none;
+      color: #005;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 40px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>75XP Web API Reference</h1>
+  <p>
+    All request and response bodies are <strong>JSON</strong>. Protected
+    endpoints require a valid access token in the
+    <code>Authorization: Bearer &lt;token&gt;</code> header. Tokens are issued
+    on login and registration, and can be refreshed via
+    <code>/api/auth/refresh</code> without re-authentication.
+  </p>
+
+  <h2>For the frontend team</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Topic</th>
+        <th>Detail</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Access token</td>
+        <td>
+          Short lived JWT. Returned in the response body. Include as
+          <code>Authorization: Bearer &lt;token&gt;</code> on all protected
+          requests.
+        </td>
+      </tr>
+      <tr>
+        <td>Refresh token</td>
+        <td>
+          Longer lived token. Set and rotated as an
+          <code>HttpOnly</code> cookie <code>refreshToken</code>. Not
+          accessible via JavaScript. Rotated on every successful refresh.
+        </td>
+      </tr>
+      <tr>
+        <td>Session invalidation</td>
+        <td>
+          Changing a password <code>PATCH /api/profile/password</code>
+          invalidates all existing sessions. The user must log in again. No
+          other endpoint currently triggers this.
+        </td>
+      </tr>
+      <tr>
+        <td>Token expiry</td>
+        <td>
+          When the access token expires, the client should call
+          <code>POST /api/auth/refresh</code> using the cookie. If the refresh
+          token is also expired, the user must log in again from scratch.
+        </td>
+      </tr>
+      <tr>
+        <td>Login error</td>
+        <td>
+          Login returns the same <code>401</code> and same error message for
+          both a wrong password and an unknown email. I have done this on
+          purpose.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <h2>Health check</h2>
+  <h3>
+    <span class="method">GET</span> <span class="endpoint">/api/version</span>
+  </h3>
+  <p class="desc">
+    Returns the current API version - Also to verify the API is reachable and
+    running. No authentication is required.
+  </p>
+
+  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
+  <pre>
+{
+  "version": 1.0
+}</pre>
+
+  <hr />
+
+  <h2>Authentication</h2>
+  <p>
+    Access token is returned in the response body and should be included in
+    the <code>Authorization</code> header for protected endpoints.
+  </p>
+
+  <h3>
+    <span class="method">POST</span>
+    <span class="endpoint">/api/auth/register</span>
+  </h3>
+  <p class="desc">
+    Creates a new user account. On success, returns the new user's details
+    along with an access token. A refresh token cookie is also set.
+  </p>
+
+  <strong>Request Body</strong>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Type</th>
+        <th>Required</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>email</td>
+        <td>string</td>
+        <td>Yes</td>
+        <td>Must be a valid email address.</td>
+      </tr>
+      <tr>
+        <td>name</td>
+        <td>string</td>
+        <td>Yes</td>
+        <td>Minimum 3 characters.</td>
+      </tr>
+      <tr>
+        <td>password</td>
+        <td>string</td>
+        <td>Yes</td>
+        <td>See validation rules</td>
+      </tr>
+      <tr>
+        <td>avatar_url</td>
+        <td>string</td>
+        <td>Yes</td>
+        <td>Must be a fully qualified URL of an image</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre>
+{
+  "email": "testuser@example.com",
+  "name": "Test User",
+  "password": "Password1$",
+  "avatar_url": "https://example.com/avatar.png"
+}</pre>
+
+  <strong>Response</strong> &nbsp;<span class="status ok">201 Created</span>
+  <pre>
+{
+  "user": {
+    "id": "&lt;uuid&gt;",
+    "email": "testuser@example.com",
+    "avatar_url": "https://example.com/avatar.png"
+  },
+  "accessToken": "&lt;access-token&gt;"
+}</pre>
+  <p>A <code>refreshToken</code> cookie is also set on the response.</p>
+
+  <strong>Error Responses</strong>
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Condition</th>
+        <th>Error message</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td>A required field is missing or empty</td>
+        <td><code>&lt;field&gt; cannot be empty</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td>Email is not a valid format</td>
+        <td><code>Invalid email address</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td>Name is shorter than 3 characters</td>
+        <td><code>Name must be at least 3 characters</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td>Password does not meet complexity requirements</td>
+        <td>
+          <code>Password must be at least 8 characters and contain at least: one
+              uppercase letter, one lowercase letter, one digit and one special
+              character</code>
+        </td>
+      </tr>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td>Avatar URL is not a fully qualified URL</td>
+        <td><code>Avatar must be a valid url</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>
+    <span class="method">POST</span>
+    <span class="endpoint">/api/auth/login</span>
+  </h3>
+  <p class="desc">
+    Authenticates an existing user with their email and password. On success,
+    returns the user's details and a fresh access token. A new refresh token
+    cookie is also set.
+  </p>
+
+  <strong>Request Body</strong>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Type</th>
+        <th>Required</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>email</td>
+        <td>string</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>password</td>
+        <td>string</td>
+        <td>Yes</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre>
+{
+  "email": "testuser@example.com",
+  "password": "Password1$"
+}</pre>
+
+  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
+  <pre>
+{
+  "user": {
+    "id": "&lt;uuid&gt;",
+    "email": "testuser@example.com",
+    "avatar_url": "https://example.com/avatar.png"
+  },
+  "accessToken": "&lt;access-token&gt;"
+}</pre>
+  <p>A <code>refreshToken</code> cookie is also set on the response.</p>
+
+  <strong>Error Responses</strong>
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Condition</th>
+        <th>Error message</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="status err">401</span></td>
+        <td>Email not found or password is incorrect</td>
+        <td><code>Invalid email or password</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>
+    <span class="method">POST</span>
+    <span class="endpoint">/api/auth/refresh</span>
+  </h3>
+  <p class="desc">
+    Issues a new access token using a valid refresh token. The existing
+    refresh token is read from the request cookie and, on success, replaced
+    with a new one. Use this endpoint when the access token has expired,
+    instead of requiring the user to log in again.
+  </p>
+
+  <strong>Request Cookie</strong>
+  <pre>refreshToken=&lt;valid-refresh-token&gt;</pre>
+
+  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
+  <pre>
+{
+  "accessToken": "&lt;new-access-token&gt;"
+}</pre>
+  <p>A new <code>refreshToken</code> cookie replaces the old one.</p>
+
+  <strong>Error Responses</strong>
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Condition</th>
+        <th>Error message</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="status err">401</span></td>
+        <td>No refresh token cookie present</td>
+        <td><code>No refresh token provided</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">401</span></td>
+        <td>Refresh token is expired or has been tampered with</td>
+        <td>
+          <code>Refresh token expired or invalid. Please log in again.</code>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <h2>User Profile</h2>
+  <p>
+    All profile endpoints require a valid access token in the
+    <code>Authorization</code> header using the <code>Bearer</code> scheme.
+  </p>
+
+  <strong>Authorization Header Format</strong>
+  <pre>Authorization: Bearer &lt;access-token&gt;</pre>
+
+  <strong>Common Authorization Errors</strong> (apply to all profile
+  endpoints)
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Condition</th>
+        <th>Error message</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="status err">401</span></td>
+        <td>No <code>Authorization</code> header sent</td>
+        <td><code>No authorization header provided</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">401</span></td>
+        <td>
+          Header present but token is missing <code>Bearer</code>
+        </td>
+        <td><code>Unrecognized authorization header</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">401</span></td>
+        <td>Token is structurally malformed</td>
+        <td><code>Invalid access token</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">401</span></td>
+        <td>Token is valid but has expired</td>
+        <td>
+          <code>Access token expired</code> - use
+          <code>/api/auth/refresh</code> to get a new one
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>
+    <span class="method">GET</span> <span class="endpoint">/api/profile</span>
+  </h3>
+  <p class="desc">
+    Returns the full profile of the currently authenticated user.
+  </p>
+
+  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
+  <pre>
+{
+  "user": {
+    "id": "97e1bffd-3dc5-4eda-83c9-606782836b17",
+    "email": "testuser@example.com",
+    "name": "Test User",
+    "avatar_url": "https://example.com/avatar.png"
+  }
+}</pre>
+
+  <h3>
+    <span class="method">PATCH</span>
+    <span class="endpoint">/api/profile</span>
+  </h3>
+  <p class="desc">
+    Updates the authenticated user's display name and/or avatar URL. Only the
+    fields you include will be updated. Returns the full updated profile on
+    success.
+  </p>
+
+  <strong>Request Body</strong>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Type</th>
+        <th>Required</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>name</td>
+        <td>string</td>
+        <td>No</td>
+        <td>Minimum 3 characters.</td>
+      </tr>
+      <tr>
+        <td>avatar_url</td>
+        <td>string</td>
+        <td>No</td>
+        <td>Must be a fully qualified URL.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre>
+{
+  "name": "Test User 1",
+  "avatar_url": "https://example.com/avatar_1.png"
+}</pre>
+
+  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
+  <pre>
+{
+  "user": {
+    "id": "97e1bffd-3dc5-4eda-83c9-606782836b17",
+    "email": "testuser@example.com",
+    "name": "Test User 1",
+    "avatar_url": "https://example.com/avatar_1.png"
+  }
+}</pre>
+
+  <h3 id="change-password">
+    <span class="method">PATCH</span>
+    <span class="endpoint">/api/profile/password</span>
+  </h3>
+  <p class="desc">
+    Changes the authenticated user's password. The current password must be
+    provided for verification. After a successful change, all existing
+    sessions are invalidated - the user will need to log in again with the new
+    password.
+  </p>
+
+  <strong>Request Body</strong>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Type</th>
+        <th>Required</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>current_password</td>
+        <td>string</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>new_password</td>
+        <td>string</td>
+        <td>Yes - must meet password rules</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre>
+{
+  "current_password": "Password1$",
+  "new_password": "Password1$$"
+}</pre>
+
+  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
+  <pre>
+{
+  "message": "Password changed successfully. Please log in again."
+}</pre>
+
+  <strong>Error Responses</strong>
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Condition</th>
+        <th>Error message</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td>The provided current password does not match</td>
+        <td><code>Current password is incorrect</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td>New password does not meet complexity requirements</td>
+        <td>
+          <code>Password must be at least 8 characters and contain at least: one
+              uppercase letter, one lowercase letter, one digit and one special
+              character</code>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <h2>Input Validation Rules</h2>
+
+  <h3>Password Requirements</h3>
+  <p>
+    All passwords (on registration and password change) must satisfy the
+    following:
+  </p>
+  <ul>
+    <li>At least 8 characters long</li>
+    <li>At least one uppercase letter (A-Z)</li>
+    <li>At least one lowercase letter (a-z)</li>
+    <li>At least one digit (0-9)</li>
+    <li>At least one special character</li>
+  </ul>
+
+  <h3>General Field Rules</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Rule</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>email</td>
+        <td>
+          Must be a valid email address format (e.g.
+          <code>user@example.com</code>)
+        </td>
+      </tr>
+      <tr>
+        <td>name</td>
+        <td>Minimum 3 characters</td>
+      </tr>
+      <tr>
+        <td>avatar_url</td>
+        <td>
+          Must be a fully qualified URL (e.g. <code>https://example.com/img.png</code>)
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+
+</html>
