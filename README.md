@@ -2,7 +2,9 @@
 
 REST API for XP75, a companion app and tracker for the 75 Hard challenge. Handles user authentication, daily check-ins, milestone tracking, and AI-generated weekly summaries.
 
-API documentation is available at [`http://`](http://).
+API documentation is available at [`https://xp75-be.onrender.com`](https://xp75-be.onrender.com).
+
+API is available at [`https://xp75-be.onrender.com/api/version`](https://xp75-be.onrender.com/api/version)
 
 ---
 
