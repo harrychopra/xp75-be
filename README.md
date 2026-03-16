@@ -118,6 +118,8 @@ The API will be available at `http://localhost:3000`.
 
 ## Auth overview
 
+For a complete auth flow, see this [diagram](assets/auth-flow.png) that covers all five happy path flows in sequence.
+
 The API uses two tokens:
 
 | Token         | Lifetime |
