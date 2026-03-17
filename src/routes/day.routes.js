@@ -1,19 +1,15 @@
 import { Router } from 'express';
 import { methodNotAllowed } from '../controllers/api.controller.js';
-import {
-  changePassword,
-  getProfile,
-  updateProfile
-} from '../controllers/profile.controller.js';
+import * as dayController from '../controllers/day.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 
 const router = Router();
 
 router.use(authenticate);
 
-router.get('/', getProfile);
-router.patch('/', updateProfile);
-router.patch('/password', changePassword);
+router.get('/:day_number', dayController.get);
+router.get('/', dayController.getAll);
+router.post('/', dayController.create);
 router.all('*_', methodNotAllowed);
 
 export default router;

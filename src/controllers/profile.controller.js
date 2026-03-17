@@ -1,5 +1,4 @@
 import bcrypt from 'bcryptjs';
-import * as authService from '../services/auth.service.js';
 import * as userService from '../services/user.service.js';
 import { ApiError } from '../utils/ApiError.js';
 import validate from '../utils/validate.js';

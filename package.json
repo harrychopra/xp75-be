@@ -22,6 +22,7 @@
     "db:setup:prod": "NODE_ENV=production node db/setup.js"
   },
   "dependencies": {
+    "@types/express": "^5.0.6",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",

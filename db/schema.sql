@@ -53,7 +53,6 @@ CREATE TABLE days(
   challenges varchar(500),
   next_day_focus varchar(500),
   progress_pic varchar(500),
-  all_complete bool DEFAULT FALSE,
   created_at timestamp DEFAULT NOW()
 );
 

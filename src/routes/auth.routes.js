@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { methodNotAllowed } from '../controllers/api.controllers.js';
+import { methodNotAllowed } from '../controllers/api.controller.js';
 import {
   login,
   logout,
