@@ -15,3 +15,5 @@ export async function awardBadgeIfEligible({ day_number, user_id }) {
   const milestone = await milestoneModel.insert(user_id, badgeType);
   if (!milestone) throw new ApiError('Failed to create milestone', 500);
 }
+
+export const findAll = user_id => milestoneModel.findAll(user_id);

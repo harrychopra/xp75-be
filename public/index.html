@@ -680,6 +680,364 @@
       </tr>
     </tbody>
   </table>
+
+
+  <hr />
+
+  <h2>Daily Check-ins</h2>
+  <p>
+    All daily check-in endpoints are protected. Each day (1&ndash;75) has exactly one record per user,
+    enforced at the database level. Days must be created in order &mdash; a day cannot be created
+    unless the previous day already exists.
+  </p>
+
+  <strong>Common Authorization Errors</strong> (apply to all daily check-in endpoints)
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Condition</th>
+        <th>Error message</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="status err">401</span></td>
+        <td>No <code>Authorization</code> header sent</td>
+        <td><code>No authorization header provided</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">401</span></td>
+        <td>Header present but token is missing <code>Bearer</code></td>
+        <td><code>Unrecognized authorization header</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">401</span></td>
+        <td>Token is structurally malformed</td>
+        <td><code>Invalid access token</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">401</span></td>
+        <td>Token is valid but has expired</td>
+        <td><code>Access token expired</code> - use <code>/api/auth/refresh</code> to get a new one</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>
+    <span class="method">GET</span> <span class="endpoint">/api/days</span>
+  </h3>
+  <p class="desc">
+    Returns all daily check-in records for the authenticated user, ordered by
+    <code>day_number</code> ascending.
+  </p>
+
+  <strong>Request Headers</strong>
+  <pre>Authorization: Bearer &lt;valid-access-token&gt;</pre>
+
+  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
+  <pre>
+[
+  {
+    "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "day_number": 1,
+    "diet_adhered": true,
+    "outdoor_workout_completed": true,
+    "indoor_workout_completed": true,
+    "water_consumed": true,
+    "pages_read": true,
+    "mood_rating": 4,
+    "achievements": "Completed first day strong. Stuck to meal prep and both workouts.",
+    "challenges": "Morning workout felt rough. Body not used to early wake-ups.",
+    "next_day_focus": "Set alarm 15 minutes earlier to give more transition time."
+  },
+  {
+    "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "day_number": 2,
+    "diet_adhered": true,
+    "outdoor_workout_completed": true,
+    "indoor_workout_completed": true,
+    "water_consumed": true,
+    "pages_read": true,
+    "mood_rating": 4,
+    "achievements": "Hit water goal before 6pm for the first time. Reading felt enjoyable.",
+    "challenges": "Diet slipped slightly at lunch - chose a smaller portion than planned.",
+    "next_day_focus": "Prep lunch the night before to avoid guessing."
+  }
+]</pre>
+  <p class="note">Returns an empty array <code>[]</code> if no days have been logged yet.</p>
+
+  <h3>
+    <span class="method">GET</span> <span class="endpoint">/api/days/:day_number</span>
+  </h3>
+  <p class="desc">
+    Returns the check-in record for a specific day. The <code>day_number</code> is passed as a URL
+    parameter and must be between 1 and 75 inclusive.
+  </p>
+
+  <strong>Request Headers</strong>
+  <pre>Authorization: Bearer &lt;valid-access-token&gt;</pre>
+
+  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
+  <pre>
+{
+  "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "day_number": 42,
+  "diet_adhered": true,
+  "outdoor_workout_completed": true,
+  "indoor_workout_completed": true,
+  "water_consumed": true,
+  "pages_read": true,
+  "mood_rating": 4,
+  "achievements": "Six weeks complete. Mental toughness is the biggest gain so far.",
+  "challenges": "Social pressure from family questioning the diet again.",
+  "next_day_focus": "Hold the boundary without over-explaining."
+}</pre>
+
+  <strong>Error Responses</strong>
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Condition</th>
+        <th>Error message</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td><code>day_number</code> is outside the 1&ndash;75 range</td>
+        <td><code>Day number must be between 1 and 75 inclusive</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">404</span></td>
+        <td>Day is within range but has not been logged yet</td>
+        <td><code>day number :day_number does not exist</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>
+    <span class="method">POST</span> <span class="endpoint">/api/days</span>
+  </h3>
+  <p class="desc">
+    Creates a new daily check-in record. Days must be logged in sequence &mdash; day 2 cannot be
+    created unless day 1 already exists. All five task fields are boolean; text fields have a
+    minimum of 10 and a maximum of 500 characters. <code>mood_rating</code> must be between 1
+    and 5 inclusive.
+  </p>
+
+  <strong>Request Headers</strong>
+  <pre>Authorization: Bearer &lt;valid-access-token&gt;</pre>
+
+  <strong>Request Body</strong>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Type</th>
+        <th>Required</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>day_number</td>
+        <td>integer</td>
+        <td>Yes</td>
+        <td>1&ndash;75 inclusive</td>
+      </tr>
+      <tr>
+        <td>diet_adhered</td>
+        <td>boolean</td>
+        <td>No</td>
+        <td>Must be a boolean, not a string</td>
+      </tr>
+      <tr>
+        <td>outdoor_workout_completed</td>
+        <td>boolean</td>
+        <td>No</td>
+        <td>Must be a boolean, not a string</td>
+      </tr>
+      <tr>
+        <td>indoor_workout_completed</td>
+        <td>boolean</td>
+        <td>No</td>
+        <td>Must be a boolean, not a string</td>
+      </tr>
+      <tr>
+        <td>water_consumed</td>
+        <td>boolean</td>
+        <td>No</td>
+        <td>Must be a boolean, not a string</td>
+      </tr>
+      <tr>
+        <td>pages_read</td>
+        <td>boolean</td>
+        <td>No</td>
+        <td>Must be a boolean, not a string</td>
+      </tr>
+      <tr>
+        <td>mood_rating</td>
+        <td>integer</td>
+        <td>No</td>
+        <td>1&ndash;5 inclusive</td>
+      </tr>
+      <tr>
+        <td>achievements</td>
+        <td>string</td>
+        <td>No</td>
+        <td>10&ndash;500 characters</td>
+      </tr>
+      <tr>
+        <td>challenges</td>
+        <td>string</td>
+        <td>No</td>
+        <td>10&ndash;500 characters</td>
+      </tr>
+      <tr>
+        <td>next_day_focus</td>
+        <td>string</td>
+        <td>No</td>
+        <td>10&ndash;500 characters</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre>
+{
+  "day_number": 1,
+  "diet_adhered": true,
+  "outdoor_workout_completed": true,
+  "indoor_workout_completed": true,
+  "water_consumed": true,
+  "pages_read": true,
+  "mood_rating": 4,
+  "achievements": "Completed first day strong. Stuck to meal prep and both workouts.",
+  "challenges": "Morning workout felt rough. Body not used to early wake-ups.",
+  "next_day_focus": "Set alarm 15 minutes earlier to give more transition time."
+}</pre>
+
+  <strong>Response</strong> &nbsp;<span class="status ok">201 Created</span>
+  <pre>
+{
+  "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "day_number": 1,
+  "diet_adhered": true,
+  "outdoor_workout_completed": true,
+  "indoor_workout_completed": true,
+  "water_consumed": true,
+  "pages_read": true,
+  "mood_rating": 4,
+  "achievements": "Completed first day strong. Stuck to meal prep and both workouts.",
+  "challenges": "Morning workout felt rough. Body not used to early wake-ups.",
+  "next_day_focus": "Set alarm 15 minutes earlier to give more transition time."
+}</pre>
+
+  <strong>Error Responses</strong>
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Condition</th>
+        <th>Error message</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td><code>day_number</code> is missing from the request body</td>
+        <td><code>day_number cannot be empty</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td><code>day_number</code> is outside the 1&ndash;75 range</td>
+        <td><code>Day number must be between 1 and 75 inclusive</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td>Previous day does not exist (sequential order enforced)</td>
+        <td><code>Day N must be completed before creating day N+1</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td>A boolean field is sent as a string (e.g. <code>"true"</code> instead of <code>true</code>)</td>
+        <td><code>&lt;field&gt; must be a boolean</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td><code>mood_rating</code> is outside the 1&ndash;5 range</td>
+        <td><code>Mood rating must be between 1 and 5 inclusive</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td><code>achievements</code>, <code>challenges</code>, or <code>next_day_focus</code> is under 10 or over 500
+          characters</td>
+        <td><code>&lt;field&gt; must be at least 10 characters and must not exceed 500 characters</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <h2>Milestones</h2>
+  <p>
+    Milestones are awarded automatically when a user completes day 25, 50, or 75 with all tasks
+    checked off. They cannot be created or deleted manually. This endpoint returns whatever badges
+    have been earned so far.
+  </p>
+
+  <h3>
+    <span class="method">GET</span> <span class="endpoint">/api/milestones</span>
+  </h3>
+  <p class="desc">
+    Returns all milestones earned by the authenticated user. Returns an empty array if none have
+    been awarded yet.
+  </p>
+
+  <strong>Request Headers</strong>
+  <pre>Authorization: Bearer &lt;valid-access-token&gt;</pre>
+
+  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
+  <pre>
+[
+  {
+    "badge_type": "bronze",
+    "awarded_at": "2024-09-25T21:00:00.000Z"
+  },
+  {
+    "badge_type": "silver",
+    "awarded_at": "2024-10-20T21:00:00.000Z"
+  },
+  {
+    "badge_type": "gold",
+    "awarded_at": "2024-11-14T22:00:00.000Z"
+  }
+]</pre>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Badge</th>
+        <th>Awarded at</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>bronze</code></td>
+        <td>Day 25 completed with all tasks checked off</td>
+      </tr>
+      <tr>
+        <td><code>silver</code></td>
+        <td>Day 50 completed with all tasks checked off</td>
+      </tr>
+      <tr>
+        <td><code>gold</code></td>
+        <td>Day 75 completed with all tasks checked off</td>
+      </tr>
+    </tbody>
+  </table>
+
 </body>
 
 </html>

@@ -7,6 +7,7 @@ import errorHandler from './middleware/error.middleware.js';
 import apiRoutes from './routes/api.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import dayRoutes from './routes/day.routes.js';
+import milestoneRoutes from './routes/milestone.routes.js';
 import profileRoutes from './routes/profile.routes.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -23,6 +24,7 @@ app.use('/api', apiRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/days', dayRoutes);
+app.use('/api/milestones', milestoneRoutes);
 
 app.use(errorHandler);
 

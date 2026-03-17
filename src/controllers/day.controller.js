@@ -7,6 +7,11 @@ export async function get(req, res, next) {
     const { day_number } = req.params;
     validateDayNumber(day_number);
     const day = await dayService.find(req.user.id, day_number);
+    if (!day) {
+      return res.status(404).json({
+        'message': `day ${day_number} does not exist`
+      });
+    }
     res.status(200).json(day);
   } catch (err) {
     next(err);
