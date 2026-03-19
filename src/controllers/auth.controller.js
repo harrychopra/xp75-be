@@ -6,7 +6,7 @@ import validate from '../utils/validate.js';
 
 export async function register(req, res, next) {
   try {
-    validate(['email', 'password', 'name', 'avatar_url'], req);
+    validate(['email', 'password', 'name', 'avatar_url'], req.body);
     const { email, password, name, avatar_url } = req.body;
 
     const user = await userService.createUser({
@@ -37,7 +37,7 @@ export async function register(req, res, next) {
 
 export async function login(req, res, next) {
   try {
-    validate(['email', 'password'], req);
+    validate(['email', 'password'], req.body);
     const { email, password } = req.body;
 
     const user = await userService.findByEmail(email);

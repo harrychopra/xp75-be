@@ -13,7 +13,7 @@ export async function getProfile(req, res, next) {
 
 export async function updateProfile(req, res, next) {
   try {
-    validate(['name', 'avatar_url'], req);
+    validate(['name', 'avatar_url'], req.body);
     const { name, avatar_url } = req.body;
 
     const updatedUser = await userService.updateProfile(req.user.id, {
@@ -33,7 +33,7 @@ export async function updateProfile(req, res, next) {
 
 export async function changePassword(req, res, next) {
   try {
-    validate(['current_password', 'new_password'], req);
+    validate(['current_password', 'new_password'], req.body);
     const { current_password, new_password } = req.body;
 
     const isPwdValid = await bcrypt.compare(

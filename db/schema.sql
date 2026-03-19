@@ -52,7 +52,8 @@ CREATE TABLE days(
   achievements varchar(500),
   challenges varchar(500),
   next_day_focus varchar(500),
-  progress_pic varchar(500),
+  progress_pic_url text,
+  progress_pic_key text,
   created_at timestamp DEFAULT NOW()
 );
 

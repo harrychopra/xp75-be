@@ -66,7 +66,7 @@ const validateLongText = (text, field) => {
   }
 };
 
-export default function validate(requiredFields, request) {
+export default function validate(requiredFields, data) {
   const fieldFn = {
     email: validateEmail,
     name: validateName,
@@ -91,12 +91,12 @@ export default function validate(requiredFields, request) {
       throw new Error(`Validator for field "${field}" not defined`);
     }
 
-    requiredFields.filter(field => request.body[field] === undefined);
+    requiredFields.filter(field => data[field] === undefined);
 
-    if (request.body?.[field] === undefined || request.body?.[field] === null) {
+    if (data[field] === undefined || data[field] === null) {
       throw new ApiError(`${field} cannot be empty`, 400);
     }
 
-    fieldFn[field](request.body[field], field);
+    fieldFn[field](data[field], field);
   }
 }
