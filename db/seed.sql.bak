@@ -1,0 +1,33 @@
+-- ============================================================
+-- SEED DATA: 3 New Users
+-- Female 1: Maya Patel        — 5 days
+-- Female 2: Jordan Ellis      — 25 days (bronze)
+-- Male:     Marcus Webb       — 50 days (bronze + silver)
+-- ============================================================
+-- ============================================================
+-- USERS
+-- ============================================================
+INSERT INTO users(id, email, name, password_hash, avatar_url, created_at, updated_at)
+  VALUES ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'alex.carter@example.com', 'Alex Carter', '$2b$10$U9BV1M8xFDPdrQWhNh0w2u6wPgPvPGQ3AA0WFPTluRxNLfjVqMrDS', 'https://api.dicebear.com/7.x/thumbs/svg?seed=alex', '2024-09-01 08:00:00+00', '2024-09-01 08:00:00+00');
+
+-- ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'maya.patel@example.com', 'Maya Patel', '$2b$10$U9BV1M8xFDPdrQWhNh0w2u6wPgPvPGQ3AA0WFPTluRxNLfjVqMrDS', 'https://api.dicebear.com/7.x/thumbs/svg?seed=maya', '2024-10-01 07:30:00+00', '2024-10-01 07:30:00+00'),
+-- ('c3d4e5f6-a7b8-9012-cdef-123456789012', 'jordan.ellis@example.com', 'Jordan Ellis', '$2b$10$U9BV1M8xFDPdrQWhNh0w2u6wPgPvPGQ3AA0WFPTluRxNLfjVqMrDS', 'https://api.dicebear.com/7.x/thumbs/svg?seed=jordan', '2024-09-05 06:00:00+00', '2024-09-05 06:00:00+00'),
+-- ('d4e5f6a7-b8c9-0123-defa-234567890123', 'marcus.webb@example.com', 'Marcus Webb', '$2b$10$U9BV1M8xFDPdrQWhNh0w2u6wPgPvPGQ3AA0WFPTluRxNLfjVqMrDS', 'https://api.dicebear.com/7.x/thumbs/svg?seed=marcus', '2024-08-20 05:45:00+00', '2024-08-20 05:45:00+00');
+-- ============================================================
+-- TOKENS
+-- ============================================================
+INSERT INTO tokens(user_id, hash, expires_at, created_at, revoked)
+  VALUES ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', '2024-12-01 08:00:00+00', '2024-09-01 08:00:00+00', FALSE);
+
+-- ============================================================
+-- DAYS: Alex Carter — 75 days
+-- ============================================================
+INSERT INTO days(user_id, day_number, diet_adhered, outdoor_workout_completed, indoor_workout_completed, water_consumed, pages_read, mood_rating, achievements, challenges, next_day_focus, progress_pic_key, created_at)
+VALUES
+  ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 1, TRUE, TRUE, TRUE, TRUE, TRUE, 4, 'Completed first day strong. Stuck to meal prep and both workouts.', 'Morning workout felt rough. Body not used to early wake-ups.', 'Set alarm 15 minutes earlier to give more transition time.', '1a82407e-18fb-4443-9515-c72451d361c3/11a86349-b829-44ba-82e8-8fbb7b2287ec.jpg', '2024-09-01 22:00:00'),
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 2, TRUE, TRUE, TRUE, TRUE, TRUE, 4, 'Hit water goal before 6pm for the first time. Reading felt enjoyable.', 'Diet slipped slightly at lunch - chose a smaller portion than planned.', 'Prep lunch the night before to avoid guessing.', '1a82407e-18fb-4443-9515-c72451d361c3/11a86349-b829-44ba-82e8-8fbb7b2287ec.jpg', '2024-09-02 22:00:00'),
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 3, TRUE, TRUE, TRUE, TRUE, TRUE, 3, 'Kept indoor workout session going despite low energy.', 'Rain cancelled outdoor walk. Felt guilty about missing it.', 'Check weather the night before and have a backup outdoor plan.', '1a82407e-18fb-4443-9515-c72451d361c3/11a86349-b829-44ba-82e8-8fbb7b2287ec.jpg', '2024-09-03 22:00:00'),
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 4, TRUE, TRUE, TRUE, TRUE, TRUE, 5, 'Best day so far. Energy was high all day. Outdoor run felt effortless.', 'Almost skipped reading due to tiredness but pushed through.', 'Use the high-energy days to build momentum, not coast.', '1a82407e-18fb-4443-9515-c72451d361c3/11a86349-b829-44ba-82e8-8fbb7b2287ec.jpg', '2024-09-04 22:00:00'),
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 5, TRUE, TRUE, TRUE, TRUE, TRUE, 4, 'Five days straight. Diet fully on track. Morning run was peaceful.', 'Social event made sticking to diet awkward.', 'Plan what to eat before going out next time.', '1a82407e-18fb-4443-9515-c72451d361c3/11a86349-b829-44ba-82e8-8fbb7b2287ec.jpg', '2024-09-05 22:00:00'),
+('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 6, TRUE, TRUE, TRUE, TRUE, TRUE, 3, 'Both workouts done despite diet slip. Reading streak intact.', 'Diet failed at dinner - gave in to takeaway after a long day.', 'Cook a batch of emergency meals for busy nights.', '1a82407e-18fb-4443-9515-c72451d361c3/11a86349-b829-44ba-82e8-8fbb7b2287ec.jpg', '2024-09-06 22:00:00');
+
