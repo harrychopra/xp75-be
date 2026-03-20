@@ -1,4 +1,5 @@
 import * as dayService from '../services/day.service.js';
+import * as summaryService from '../services/summary.service.js';
 import { ApiError } from '../utils/ApiError.js';
 import validate, { validateDayNumber } from '../utils/validate.js';
 
@@ -21,7 +22,8 @@ export async function get(req, res, next) {
 export async function getAll(req, res, next) {
   try {
     const days = await dayService.findAll(req.user.id);
-    res.status(200).json(days);
+    const summaries = await summaryService.findAll(req.user.id);
+    res.status(200).json({ days, summaries });
   } catch (err) {
     next(err);
   }

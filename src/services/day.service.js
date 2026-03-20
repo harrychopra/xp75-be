@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid';
 import client from '../../storage/client.js';
 import * as dayModel from '../models/day.model.js';
 import * as milestoneService from '../services/milestone.service.js';
+import * as summaryService from '../services/summary.service.js';
 import { ApiError } from '../utils/ApiError.js';
 
 export async function find(userId, dayNumber) {
@@ -54,5 +55,11 @@ export async function create(day, file) {
   });
 
   await milestoneService.awardBadgeIfEligible(newDay);
+
+  if (newDay['day_number'] % 7 === 0) {
+    const week = newDay['day_number'] / 7;
+    await summaryService.create(user_id, week);
+  }
+
   return newDay;
 }
