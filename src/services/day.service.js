@@ -55,11 +55,11 @@ export async function create(day, file) {
   });
 
   await milestoneService.awardBadgeIfEligible(newDay);
-  console.log(newDay['day_number']);
 
   if (newDay['day_number'] % 7 === 0) {
     const week = newDay['day_number'] / 7;
     await summaryService.create(user_id, week);
   }
+
   return newDay;
 }

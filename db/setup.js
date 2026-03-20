@@ -7,9 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 try {
   const schema = readFileSync(join(__dirname, 'schema.sql'), 'utf-8');
-  const seed = readFileSync(join(__dirname, 'seed.sql'), 'utf-8');
   await db.query(schema);
-  await db.query(seed);
   console.log('[DB setup successful]');
 } catch (err) {
   console.error('[DB setup failed]:', err.message);
