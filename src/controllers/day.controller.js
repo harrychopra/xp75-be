@@ -1,4 +1,5 @@
 import * as dayService from '../services/day.service.js';
+import * as milestoneService from '../services/milestone.service.js';
 import * as summaryService from '../services/summary.service.js';
 import { ApiError } from '../utils/ApiError.js';
 import validate, { validateDayNumber } from '../utils/validate.js';
@@ -63,12 +64,41 @@ export async function create(req, res, next) {
     ], day);
 
     const newDay = await dayService.create(day, req.file);
-    res.status(201).json({ day: newDay });
+    await milestoneService.awardBadgeIfEligible(newDay);
+
+    let summary;
+
+    if (newDay['day_number'] % 7 === 0) {
+      const week = newDay['day_number'] / 7;
+      summary = await summaryService.create(req.user.id, week);
+    }
+
+    return res.status(201).json({ day: newDay, weekly_summary: summary });
   } catch (err) {
     if (err.code === '23505') {
       next(new ApiError('day_number already exists', 400));
     } else {
       next(err);
     }
+  }
+}
+
+export async function remove(req, res, next) {
+  try {
+    const { day_number } = req.params;
+    validateDayNumber(day_number);
+    await dayService.remove(req.user.id, day_number);
+
+    if (day_number % 25 === 0) {
+      await milestoneService.remove(req.user.id, day_number);
+    }
+
+    if (day_number % 7 === 0) {
+      await summaryService.remove(req.user.id, day_number);
+    }
+
+    res.status(204).send();
+  } catch (err) {
+    next(err);
   }
 }
