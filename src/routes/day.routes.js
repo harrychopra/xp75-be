@@ -9,6 +9,7 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/:day_number', dayController.get);
+router.delete('/:day_number', dayController.remove);
 router.get('/', dayController.getAll);
 router.post('/', upload.single('progress_pic'), dayController.create);
 router.all('*_', methodNotAllowed);

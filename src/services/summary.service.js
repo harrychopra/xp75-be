@@ -94,7 +94,13 @@ export async function create(userId, week) {
     throw new Error(`AI Summary response was empty or malformed`);
   }
 
-  await summaryModel.create(userId, week, summaryText.trim());
+  const summary = await summaryModel.create(userId, week, summaryText.trim());
+  return summary;
 }
 
 export const findAll = userId => summaryModel.findAll(userId);
+
+export async function remove(userId, day_number) {
+  const week = day_number / 7;
+  await summaryModel.remove(userId, week);
+}

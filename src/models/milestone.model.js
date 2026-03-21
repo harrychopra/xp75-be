@@ -17,3 +17,14 @@ export async function findAll(user_id) {
 
   return rows;
 }
+
+export async function remove(userId, badge) {
+  const result = await db.query(
+    `DELETE FROM milestones WHERE user_id = $1 AND badge_type = $2`,
+    [userId, badge]
+  );
+
+  if (result.rowCount !== 1) {
+    throw new Error('Failed to delete milestone record');
+  }
+}
