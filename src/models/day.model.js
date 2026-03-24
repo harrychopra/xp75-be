@@ -70,10 +70,8 @@ export async function create(day) {
 }
 
 export async function remove(userId, dayNumber) {
-  const { rowCount } = await db.query(
+  await db.query(
     `DELETE FROM days WHERE user_id = $1 AND day_number = $2`,
     [userId, dayNumber]
   );
-
-  if (rowCount !== 1) throw new Error('Failed to delete day record');
 }

@@ -40,12 +40,8 @@ export async function create(user_id, weekNumber, summaryText) {
 }
 
 export async function remove(userId, week) {
-  const result = await db.query(
+  await db.query(
     `DELETE FROM weekly_summaries WHERE user_id = $1 AND week = $2`,
     [userId, week]
   );
-
-  if (result.rowCount !== 1) {
-    throw new Error('Failed to delete summary record');
-  }
 }

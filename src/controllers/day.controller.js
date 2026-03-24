@@ -148,14 +148,17 @@ export async function remove(req, res, next) {
   try {
     const { day_number } = req.params;
     validateDayNumber(day_number);
-    await dayService.remove(req.user.id, day_number);
 
-    if (day_number % 25 === 0) {
-      await milestoneService.remove(req.user.id, day_number);
+    const dayNumber = Number(day_number);
+
+    await dayService.remove(req.user.id, dayNumber);
+
+    if (dayNumber % 25 === 0) {
+      await milestoneService.remove(req.user.id, dayNumber);
     }
 
-    if (day_number % 7 === 0) {
-      await summaryService.remove(req.user.id, day_number);
+    if (dayNumber % 7 === 0) {
+      await summaryService.remove(req.user.id, dayNumber);
     }
 
     res.status(204).send();
