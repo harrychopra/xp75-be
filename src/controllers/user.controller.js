@@ -1,31 +1,48 @@
 import bcrypt from 'bcryptjs';
 import * as userService from '../services/user.service.js';
 import { ApiError } from '../utils/ApiError.js';
+import { getUrl } from '../utils/storage.js';
 import validate from '../utils/validate.js';
 
-export async function getProfile(req, res, next) {
+export async function get(req, res, next) {
+  const { user } = req;
   try {
-    res.status(200).json({ user: req.user });
+    res.status(200).json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatar_url: await getUrl(user.avatar_key)
+      }
+    });
   } catch (err) {
     next(err);
   }
 }
 
-export async function updateProfile(req, res, next) {
+export async function update(req, res, next) {
   try {
-    validate(['name', 'avatar_url'], req.body);
-    const { name, avatar_url } = req.body;
+    validate(['name'], req.body);
+    const { name } = req.body;
 
-    const updatedUser = await userService.updateProfile(req.user.id, {
+    const user = await userService.update(
+      req.user.id,
       name,
-      avatarUrl: avatar_url
-    });
+      req.file
+    );
 
-    if (!updatedUser) {
+    if (!user) {
       throw new ApiError('User not found', 404);
     }
 
-    res.status(200).json({ user: updatedUser });
+    res.status(200).json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatar_url: await getUrl(user.avatar_key)
+      }
+    });
   } catch (err) {
     next(err);
   }
@@ -44,7 +61,7 @@ export async function changePassword(req, res, next) {
       throw new ApiError('Current password is incorrect', 401);
     }
 
-    await userService.updatePassword(req.user.id, new_password);
+    await userService.changePassword(req.user.id, new_password);
 
     res.status(200).json({
       message: 'Password changed successfully. Please log in again.'

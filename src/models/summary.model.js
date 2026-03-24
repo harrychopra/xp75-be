@@ -1,9 +1,24 @@
 import db from '../../db/connection.js';
 
+export async function find(userId, week) {
+  const { rows } = await db.query(
+    `SELECT
+      week, summary
+    FROM
+      weekly_summaries
+    WHERE
+      user_id = $1 AND week = $2
+    ORDER BY
+     week
+    ASC`,
+    [userId, week]
+  );
+  return rows[0] || null;
+}
 export async function findAll(userId) {
   const { rows } = await db.query(
     `SELECT
-      user_id, week, summary, created_at
+      week, summary
     FROM
       weekly_summaries
     WHERE

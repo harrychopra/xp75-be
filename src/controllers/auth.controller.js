@@ -2,19 +2,20 @@ import bcrypt from 'bcryptjs';
 import * as authService from '../services/auth.service.js';
 import * as userService from '../services/user.service.js';
 import { ApiError } from '../utils/ApiError.js';
+import { getUrl } from '../utils/storage.js';
 import validate from '../utils/validate.js';
 
 export async function register(req, res, next) {
   try {
-    validate(['email', 'password', 'name', 'avatar_url'], req.body);
-    const { email, password, name, avatar_url } = req.body;
+    validate(['email', 'password', 'name', 'avatar_key'], req.body);
+    const { email, password, name, avatar_key } = req.body;
 
-    const user = await userService.createUser({
+    const user = await userService.create(
       name,
       email,
       password,
-      avatar_url
-    });
+      avatar_key
+    );
 
     const { accessToken, refreshToken, expiresAt } = await authService
       .generateTokens(user.id);
@@ -24,9 +25,9 @@ export async function register(req, res, next) {
     res.status(201).json({
       user: {
         id: user.id,
-        username: user.username,
+        name: user.name,
         email: user.email,
-        avatar_url: user.avatar_url
+        avatar_url: await getUrl(user.avatar_key)
       },
       accessToken
     });
@@ -60,7 +61,7 @@ export async function login(req, res, next) {
         id: user.id,
         name: user.name,
         email: user.email,
-        avatar_url: user.avatar_url
+        avatar_url: await getUrl(user.avatar_key)
       },
       accessToken
     });

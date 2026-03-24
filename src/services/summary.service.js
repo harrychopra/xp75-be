@@ -98,6 +98,8 @@ export async function create(userId, week) {
   return summary;
 }
 
+export const find = (userId, week) => summaryModel.find(userId, week);
+
 export const findAll = userId => summaryModel.findAll(userId);
 
 export async function remove(userId, day_number) {

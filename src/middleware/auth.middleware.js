@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { findById } from '../services/user.service.js';
+import { find } from '../services/user.service.js';
 import { ApiError } from '../utils/ApiError.js';
 
 const accessSalt = process.env.ACCESS_SALT;
@@ -20,7 +20,7 @@ export async function authenticate(req, res, next) {
 
     const token = parts[1];
     const decoded = jwt.verify(token, accessSalt);
-    const user = await findById(decoded.sub);
+    const user = await find(decoded.sub);
 
     if (!user) {
       throw new ApiError('User not found', 404);

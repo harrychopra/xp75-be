@@ -133,8 +133,9 @@
 <body>
   <h1>75XP Web API Reference</h1>
   <p>
-    All request and response bodies are <strong>JSON</strong>. Protected
-    endpoints require a valid access token in the
+    All request and response bodies are <strong>JSON</strong> unless noted otherwise.
+    Endpoints that accept file uploads use <strong>multipart/form-data</strong>.
+    Protected endpoints require a valid access token in the
     <code>Authorization: Bearer &lt;token&gt;</code> header. Tokens are issued
     on login and registration, and can be refreshed via
     <code>/api/auth/refresh</code> without re-authentication.
@@ -152,7 +153,7 @@
       <tr>
         <td>Access token</td>
         <td>
-          Short lived JWT. Returned in the response body. Include as
+          Short-lived JWT. Returned in the response body. Include as
           <code>Authorization: Bearer &lt;token&gt;</code> on all protected
           requests.
         </td>
@@ -160,23 +161,38 @@
       <tr>
         <td>Refresh token</td>
         <td>
-          Longer lived token. Set and rotated as an
+          Longer-lived token. Set and rotated as an
           <code>HttpOnly</code> cookie <code>refreshToken</code>. Not
           accessible via JavaScript. Rotated on every successful refresh.
         </td>
       </tr>
       <tr>
+        <td>Signed URLs</td>
+        <td>
+          <code>avatar_url</code> and <code>progress_pic_url</code> in responses are pre-signed URLs
+          valid for 7 days. Do not store them permanently &mdash; re-fetch when needed.
+        </td>
+      </tr>
+      <tr>
+        <td>File uploads</td>
+        <td>
+          <code>POST /api/auth/register</code>, <code>PATCH /api/profile</code>, and
+          <code>POST /api/days</code> accept <code>multipart/form-data</code>, not JSON.
+          Send all fields as form fields and the file under its designated key.
+        </td>
+      </tr>
+      <tr>
         <td>Session invalidation</td>
         <td>
-          Changing a password <code>PATCH /api/profile/password</code>
-          invalidates all existing sessions. The user must log in again. No
-          other endpoint currently triggers this.
+          Changing a password (<code>PATCH /api/profile/password</code>) and logging out
+          (<code>POST /api/auth/logout</code>) both invalidate all existing sessions.
+          The user must log in again.
         </td>
       </tr>
       <tr>
         <td>Token expiry</td>
         <td>
-          When the access token expires, the client should call
+          When the access token expires, call
           <code>POST /api/auth/refresh</code> using the cookie. If the refresh
           token is also expired, the user must log in again from scratch.
         </td>
@@ -184,9 +200,16 @@
       <tr>
         <td>Login error</td>
         <td>
-          Login returns the same <code>401</code> and same error message for
-          both a wrong password and an unknown email. I have done this on
-          purpose.
+          Login returns the same <code>401</code> and the same error message for
+          both a wrong password and an unknown email. This is intentional.
+        </td>
+      </tr>
+      <tr>
+        <td>Weekly summary</td>
+        <td>
+          On every 7th day, <code>POST /api/days</code> generates an AI summary of the preceding
+          7 days and returns it in <code>weekly_summary</code>. All other days return
+          <code>"weekly_summary": null</code>.
         </td>
       </tr>
     </tbody>
@@ -199,13 +222,12 @@
     <span class="method">GET</span> <span class="endpoint">/api/version</span>
   </h3>
   <p class="desc">
-    Returns the current API version - Also to verify the API is reachable and
-    running. No authentication is required.
+    Returns the current API version. Also use this to verify the API is reachable.
+    No authentication required.
   </p>
 
-  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
-  <pre>
-{
+  <strong>Response</strong>&nbsp;<span class="status ok">200 OK</span>
+  <pre>{
   "version": 1.0
 }</pre>
 
@@ -213,20 +235,21 @@
 
   <h2>Authentication</h2>
   <p>
-    Access token is returned in the response body and should be included in
-    the <code>Authorization</code> header for protected endpoints.
+    The access token is returned in the response body and must be included in the
+    <code>Authorization</code> header for all protected endpoints.
   </p>
 
+  <!-- REGISTER -->
   <h3>
     <span class="method">POST</span>
     <span class="endpoint">/api/auth/register</span>
   </h3>
   <p class="desc">
-    Creates a new user account. On success, returns the new user's details
-    along with an access token. A refresh token cookie is also set.
+    Creates a new user account. Accepts <code>multipart/form-data</code>. On success, returns the
+    new user's details along with an access token and sets a refresh token cookie.
   </p>
 
-  <strong>Request Body</strong>
+  <strong>Request Body</strong> &mdash; <code>multipart/form-data</code>
   <table>
     <thead>
       <tr>
@@ -253,36 +276,30 @@
         <td>password</td>
         <td>string</td>
         <td>Yes</td>
-        <td>See validation rules</td>
+        <td>See password rules.</td>
       </tr>
       <tr>
-        <td>avatar_url</td>
+        <td>avatar_key</td>
         <td>string</td>
         <td>Yes</td>
-        <td>Must be a fully qualified URL of an image</td>
+        <td>One of: <code>avatar_1.png</code>, <code>avatar_2.png</code>, <code>avatar_3.png</code>,
+          <code>avatar_4.png</code></td>
       </tr>
     </tbody>
   </table>
 
-  <pre>
-{
-  "email": "testuser@example.com",
-  "name": "Test User",
-  "password": "Password1$",
-  "avatar_url": "https://example.com/avatar.png"
-}</pre>
-
-  <strong>Response</strong> &nbsp;<span class="status ok">201 Created</span>
-  <pre>
-{
+  <strong>Response</strong>&nbsp;<span class="status ok">201 Created</span>
+  <pre>{
   "user": {
     "id": "&lt;uuid&gt;",
+    "name": "Test User",
     "email": "testuser@example.com",
-    "avatar_url": "https://example.com/avatar.png"
+    "avatar_url": "&lt;signed-url&gt;"
   },
   "accessToken": "&lt;access-token&gt;"
 }</pre>
-  <p>A <code>refreshToken</code> cookie is also set on the response.</p>
+  <p class="note"><code>avatar_url</code> is a pre-signed URL valid for 7 days. A <code>refreshToken</code> cookie is
+    also set.</p>
 
   <strong>Error Responses</strong>
   <table>
@@ -313,30 +330,28 @@
         <td><span class="status err">400</span></td>
         <td>Password does not meet complexity requirements</td>
         <td>
-          <code>Password must be at least 8 characters and contain at least: one
-              uppercase letter, one lowercase letter, one digit and one special
-              character</code>
+          <code>Password must be at least 8 characters and contain at least: one uppercase letter, one lowercase letter, one digit and one special character</code>
         </td>
       </tr>
       <tr>
         <td><span class="status err">400</span></td>
-        <td>Avatar URL is not a fully qualified URL</td>
-        <td><code>Avatar must be a valid url</code></td>
+        <td><code>avatar_key</code> is not one of the accepted values</td>
+        <td><code>Avatar key not recognised</code></td>
       </tr>
     </tbody>
   </table>
 
+  <!-- LOGIN -->
   <h3>
     <span class="method">POST</span>
     <span class="endpoint">/api/auth/login</span>
   </h3>
   <p class="desc">
-    Authenticates an existing user with their email and password. On success,
-    returns the user's details and a fresh access token. A new refresh token
-    cookie is also set.
+    Authenticates an existing user with their email and password. Returns the user's details,
+    a fresh access token, and sets a refresh token cookie.
   </p>
 
-  <strong>Request Body</strong>
+  <strong>Request Body</strong> &mdash; <code>application/json</code>
   <table>
     <thead>
       <tr>
@@ -359,23 +374,18 @@
     </tbody>
   </table>
 
-  <pre>
-{
-  "email": "testuser@example.com",
-  "password": "Password1$"
-}</pre>
-
-  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
-  <pre>
-{
+  <strong>Response</strong>&nbsp;<span class="status ok">200 OK</span>
+  <pre>{
   "user": {
     "id": "&lt;uuid&gt;",
+    "name": "Test User",
     "email": "testuser@example.com",
-    "avatar_url": "https://example.com/avatar.png"
+    "avatar_url": "&lt;signed-url&gt;"
   },
   "accessToken": "&lt;access-token&gt;"
 }</pre>
-  <p>A <code>refreshToken</code> cookie is also set on the response.</p>
+  <p class="note"><code>avatar_url</code> is a pre-signed URL valid for 7 days. A <code>refreshToken</code> cookie is
+    also set.</p>
 
   <strong>Error Responses</strong>
   <table>
@@ -394,27 +404,26 @@
       </tr>
     </tbody>
   </table>
+  <p class="note">Both cases return the same message intentionally to prevent account enumeration.</p>
 
+  <!-- REFRESH -->
   <h3>
     <span class="method">POST</span>
     <span class="endpoint">/api/auth/refresh</span>
   </h3>
   <p class="desc">
-    Issues a new access token using a valid refresh token. The existing
-    refresh token is read from the request cookie and, on success, replaced
-    with a new one. Use this endpoint when the access token has expired,
-    instead of requiring the user to log in again.
+    Issues a new access token using a valid refresh token. The refresh token is read from the
+    request cookie and replaced with a new one on success.
   </p>
 
   <strong>Request Cookie</strong>
   <pre>refreshToken=&lt;valid-refresh-token&gt;</pre>
 
-  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
-  <pre>
-{
+  <strong>Response</strong>&nbsp;<span class="status ok">200 OK</span>
+  <pre>{
   "accessToken": "&lt;new-access-token&gt;"
 }</pre>
-  <p>A new <code>refreshToken</code> cookie replaces the old one.</p>
+  <p class="note">A new <code>refreshToken</code> cookie is set, replacing the old one.</p>
 
   <strong>Error Responses</strong>
   <table>
@@ -434,15 +443,32 @@
       <tr>
         <td><span class="status err">401</span></td>
         <td>Refresh token is expired or has been tampered with</td>
-        <td>
-          <code>Refresh token expired or invalid. Please log in again.</code>
-        </td>
+        <td><code>Refresh token expired or invalid. Please log in again.</code></td>
       </tr>
     </tbody>
   </table>
 
+  <!-- LOGOUT -->
+  <h3>
+    <span class="method">POST</span>
+    <span class="endpoint">/api/auth/logout</span>
+  </h3>
+  <p class="desc">
+    Logs the user out by revoking all active refresh tokens for their account. The client should
+    discard the access token after calling this endpoint. No request body is required.
+  </p>
+
+  <strong>Request Headers</strong>
+  <pre>Authorization: Bearer &lt;valid-access-token&gt;</pre>
+
+  <strong>Response</strong>&nbsp;<span class="status ok">200 OK</span>
+  <pre>{
+  "message": "Logged out successfully."
+}</pre>
+
   <hr />
 
+  <!-- USER PROFILE -->
   <h2>User Profile</h2>
   <p>
     All profile endpoints require a valid access token in the
@@ -452,8 +478,7 @@
   <strong>Authorization Header Format</strong>
   <pre>Authorization: Bearer &lt;access-token&gt;</pre>
 
-  <strong>Common Authorization Errors</strong> (apply to all profile
-  endpoints)
+  <strong>Common Authorization Errors</strong> (apply to all protected endpoints)
   <table>
     <thead>
       <tr>
@@ -470,9 +495,7 @@
       </tr>
       <tr>
         <td><span class="status err">401</span></td>
-        <td>
-          Header present but token is missing <code>Bearer</code>
-        </td>
+        <td>Header present but token is missing the <code>Bearer</code> scheme</td>
         <td><code>Unrecognized authorization header</code></td>
       </tr>
       <tr>
@@ -483,43 +506,39 @@
       <tr>
         <td><span class="status err">401</span></td>
         <td>Token is valid but has expired</td>
-        <td>
-          <code>Access token expired</code> - use
-          <code>/api/auth/refresh</code> to get a new one
-        </td>
+        <td><code>Access token expired</code> &mdash; use <code>/api/auth/refresh</code> to get a new one</td>
       </tr>
     </tbody>
   </table>
 
+  <!-- GET PROFILE -->
   <h3>
     <span class="method">GET</span> <span class="endpoint">/api/profile</span>
   </h3>
-  <p class="desc">
-    Returns the full profile of the currently authenticated user.
-  </p>
+  <p class="desc">Returns the full profile of the currently authenticated user.</p>
 
-  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
-  <pre>
-{
+  <strong>Response</strong>&nbsp;<span class="status ok">200 OK</span>
+  <pre>{
   "user": {
-    "id": "97e1bffd-3dc5-4eda-83c9-606782836b17",
-    "email": "testuser@example.com",
+    "id": "&lt;uuid&gt;",
     "name": "Test User",
-    "avatar_url": "https://example.com/avatar.png"
+    "email": "testuser@example.com",
+    "avatar_url": "&lt;signed-url&gt;"
   }
 }</pre>
+  <p class="note"><code>avatar_url</code> is a pre-signed URL valid for 7 days.</p>
 
+  <!-- UPDATE PROFILE -->
   <h3>
     <span class="method">PATCH</span>
     <span class="endpoint">/api/profile</span>
   </h3>
   <p class="desc">
-    Updates the authenticated user's display name and/or avatar URL. Only the
-    fields you include will be updated. Returns the full updated profile on
-    success.
+    Updates the authenticated user's display name and/or avatar. Accepts <code>multipart/form-data</code>.
+    Only the fields you include will be updated. Returns the full updated profile.
   </p>
 
-  <strong>Request Body</strong>
+  <strong>Request Body</strong> &mdash; <code>multipart/form-data</code>
   <table>
     <thead>
       <tr>
@@ -537,43 +556,36 @@
         <td>Minimum 3 characters.</td>
       </tr>
       <tr>
-        <td>avatar_url</td>
-        <td>string</td>
+        <td>avatar_pic</td>
+        <td>file</td>
         <td>No</td>
-        <td>Must be a fully qualified URL.</td>
+        <td>Replaces the current avatar. Uploaded as a file field.</td>
       </tr>
     </tbody>
   </table>
 
-  <pre>
-{
-  "name": "Test User 1",
-  "avatar_url": "https://example.com/avatar_1.png"
-}</pre>
-
-  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
-  <pre>
-{
+  <strong>Response</strong>&nbsp;<span class="status ok">200 OK</span>
+  <pre>{
   "user": {
     "id": "97e1bffd-3dc5-4eda-83c9-606782836b17",
-    "email": "testuser@example.com",
     "name": "Test User 1",
-    "avatar_url": "https://example.com/avatar_1.png"
+    "email": "testuser@example.com",
+    "avatar_url": "&lt;signed-url&gt;"
   }
 }</pre>
+  <p class="note"><code>avatar_url</code> is a pre-signed URL valid for 7 days.</p>
 
+  <!-- CHANGE PASSWORD -->
   <h3 id="change-password">
     <span class="method">PATCH</span>
     <span class="endpoint">/api/profile/password</span>
   </h3>
   <p class="desc">
-    Changes the authenticated user's password. The current password must be
-    provided for verification. After a successful change, all existing
-    sessions are invalidated - the user will need to log in again with the new
-    password.
+    Changes the authenticated user's password. The current password must be provided for
+    verification. All existing sessions are invalidated on success &mdash; the user must log in again.
   </p>
 
-  <strong>Request Body</strong>
+  <strong>Request Body</strong> &mdash; <code>application/json</code>
   <table>
     <thead>
       <tr>
@@ -591,20 +603,13 @@
       <tr>
         <td>new_password</td>
         <td>string</td>
-        <td>Yes - must meet password rules</td>
+        <td>Yes &mdash; must meet password rules</td>
       </tr>
     </tbody>
   </table>
 
-  <pre>
-{
-  "current_password": "Password1$",
-  "new_password": "Password1$$"
-}</pre>
-
-  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
-  <pre>
-{
+  <strong>Response</strong>&nbsp;<span class="status ok">200 OK</span>
+  <pre>{
   "message": "Password changed successfully. Please log in again."
 }</pre>
 
@@ -620,16 +625,14 @@
     <tbody>
       <tr>
         <td><span class="status err">400</span></td>
-        <td>The provided current password does not match</td>
+        <td>Provided current password does not match</td>
         <td><code>Current password is incorrect</code></td>
       </tr>
       <tr>
         <td><span class="status err">400</span></td>
         <td>New password does not meet complexity requirements</td>
         <td>
-          <code>Password must be at least 8 characters and contain at least: one
-              uppercase letter, one lowercase letter, one digit and one special
-              character</code>
+          <code>Password must be at least 8 characters and contain at least: one uppercase letter, one lowercase letter, one digit and one special character</code>
         </td>
       </tr>
     </tbody>
@@ -637,161 +640,91 @@
 
   <hr />
 
-  <h2>Input Validation Rules</h2>
-
-  <h3>Password Requirements</h3>
-  <p>
-    All passwords (on registration and password change) must satisfy the
-    following:
-  </p>
-  <ul>
-    <li>At least 8 characters long</li>
-    <li>At least one uppercase letter (A-Z)</li>
-    <li>At least one lowercase letter (a-z)</li>
-    <li>At least one digit (0-9)</li>
-    <li>At least one special character</li>
-  </ul>
-
-  <h3>General Field Rules</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Field</th>
-        <th>Rule</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>email</td>
-        <td>
-          Must be a valid email address format (e.g.
-          <code>user@example.com</code>)
-        </td>
-      </tr>
-      <tr>
-        <td>name</td>
-        <td>Minimum 3 characters</td>
-      </tr>
-      <tr>
-        <td>avatar_url</td>
-        <td>
-          Must be a fully qualified URL (e.g. <code>https://example.com/img.png</code>)
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
-
-  <hr />
-
+  <!-- DAILY CHECK-INS -->
   <h2>Daily Check-ins</h2>
   <p>
-    All daily check-in endpoints are protected. Each day (1&ndash;75) has exactly one record per user,
-    enforced at the database level. Days must be created in order &mdash; a day cannot be created
-    unless the previous day already exists.
+    All daily check-in endpoints are protected. Each user has at most one record per day number
+    (1&ndash;75), enforced at the database level. Days must be created in order &mdash; a day
+    cannot be created unless the previous day already exists.
+  </p>
+  <p>
+    Endpoints that accept a file upload use <code>multipart/form-data</code>.
+    The <code>progress_pic_url</code> in responses is a pre-signed URL valid for 7 days.
   </p>
 
-  <strong>Common Authorization Errors</strong> (apply to all daily check-in endpoints)
-  <table>
-    <thead>
-      <tr>
-        <th>Status</th>
-        <th>Condition</th>
-        <th>Error message</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="status err">401</span></td>
-        <td>No <code>Authorization</code> header sent</td>
-        <td><code>No authorization header provided</code></td>
-      </tr>
-      <tr>
-        <td><span class="status err">401</span></td>
-        <td>Header present but token is missing <code>Bearer</code></td>
-        <td><code>Unrecognized authorization header</code></td>
-      </tr>
-      <tr>
-        <td><span class="status err">401</span></td>
-        <td>Token is structurally malformed</td>
-        <td><code>Invalid access token</code></td>
-      </tr>
-      <tr>
-        <td><span class="status err">401</span></td>
-        <td>Token is valid but has expired</td>
-        <td><code>Access token expired</code> - use <code>/api/auth/refresh</code> to get a new one</td>
-      </tr>
-    </tbody>
-  </table>
-
+  <!-- GET ALL DAYS -->
   <h3>
     <span class="method">GET</span> <span class="endpoint">/api/days</span>
   </h3>
   <p class="desc">
-    Returns all daily check-in records for the authenticated user, ordered by
-    <code>day_number</code> ascending.
+    Returns all daily check-in records for the authenticated user alongside any weekly summaries
+    generated so far. Days are ordered by <code>day_number</code> ascending.
   </p>
 
   <strong>Request Headers</strong>
   <pre>Authorization: Bearer &lt;valid-access-token&gt;</pre>
 
-  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
-  <pre>
-[
-  {
-    "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "day_number": 1,
-    "diet_adhered": true,
-    "outdoor_workout_completed": true,
-    "indoor_workout_completed": true,
-    "water_consumed": true,
-    "pages_read": true,
-    "mood_rating": 4,
-    "achievements": "Completed first day strong. Stuck to meal prep and both workouts.",
-    "challenges": "Morning workout felt rough. Body not used to early wake-ups.",
-    "next_day_focus": "Set alarm 15 minutes earlier to give more transition time."
-  },
-  {
-    "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-    "day_number": 2,
-    "diet_adhered": true,
-    "outdoor_workout_completed": true,
-    "indoor_workout_completed": true,
-    "water_consumed": true,
-    "pages_read": true,
-    "mood_rating": 4,
-    "achievements": "Hit water goal before 6pm for the first time. Reading felt enjoyable.",
-    "challenges": "Diet slipped slightly at lunch - chose a smaller portion than planned.",
-    "next_day_focus": "Prep lunch the night before to avoid guessing."
-  }
-]</pre>
-  <p class="note">Returns an empty array <code>[]</code> if no days have been logged yet.</p>
+  <strong>Response</strong>&nbsp;<span class="status ok">200 OK</span>
+  <pre>{
+  "days": [
+    {
+      "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "day_number": 1,
+      "diet_adhered": true,
+      "outdoor_workout_completed": true,
+      "indoor_workout_completed": true,
+      "water_consumed": true,
+      "pages_read": true,
+      "mood_rating": 4,
+      "achievements": "Completed first day strong. Stuck to meal prep and both workouts.",
+      "challenges": "Morning workout felt rough. Body not used to early wake-ups.",
+      "next_day_focus": "Set alarm 15 minutes earlier to give more transition time.",
+      "progress_pic_url": "&lt;signed-url&gt;"
+    }
+  ],
+  "weekly_summaries": [
+    {
+      "week": 1,
+      "summary": "&lt;weekly summary text&gt;"
+    },
+    {
+      "week": 2,
+      "summary": "&lt;weekly summary text&gt;"
+    }
+  ]
+}</pre>
+  <p class="note">Both arrays are empty if no days have been logged yet. <code>weekly_summaries</code> only contains
+    entries for completed weeks.</p>
 
+  <!-- GET SINGLE DAY -->
   <h3>
     <span class="method">GET</span> <span class="endpoint">/api/days/:day_number</span>
   </h3>
   <p class="desc">
-    Returns the check-in record for a specific day. The <code>day_number</code> is passed as a URL
-    parameter and must be between 1 and 75 inclusive.
+    Returns the check-in record for a specific day. <code>day_number</code> is passed as a URL
+    parameter and must be between 1 and 75 inclusive. The response also includes the weekly summary
+    for that week if one has been generated; otherwise <code>weekly_summary</code> is <code>null</code>.
   </p>
 
   <strong>Request Headers</strong>
   <pre>Authorization: Bearer &lt;valid-access-token&gt;</pre>
 
-  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
-  <pre>
-{
-  "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "day_number": 42,
-  "diet_adhered": true,
-  "outdoor_workout_completed": true,
-  "indoor_workout_completed": true,
-  "water_consumed": true,
-  "pages_read": true,
-  "mood_rating": 4,
-  "achievements": "Six weeks complete. Mental toughness is the biggest gain so far.",
-  "challenges": "Social pressure from family questioning the diet again.",
-  "next_day_focus": "Hold the boundary without over-explaining."
+  <strong>Response</strong>&nbsp;<span class="status ok">200 OK</span>
+  <pre>{
+  "day": {
+    "day_number": 12,
+    "diet_adhered": true,
+    "outdoor_workout_completed": true,
+    "indoor_workout_completed": true,
+    "water_consumed": true,
+    "pages_read": true,
+    "mood_rating": 4,
+    "achievements": "Six weeks complete. Mental toughness is the biggest gain so far.",
+    "challenges": "Social pressure from family questioning the diet again.",
+    "next_day_focus": "Hold the boundary without over-explaining.",
+    "progress_pic_url": "&lt;signed-url&gt;"
+  },
+  "weekly_summary": null
 }</pre>
 
   <strong>Error Responses</strong>
@@ -817,20 +750,21 @@
     </tbody>
   </table>
 
+  <!-- CREATE DAY -->
   <h3>
     <span class="method">POST</span> <span class="endpoint">/api/days</span>
   </h3>
   <p class="desc">
-    Creates a new daily check-in record. Days must be logged in sequence &mdash; day 2 cannot be
-    created unless day 1 already exists. All five task fields are boolean; text fields have a
-    minimum of 10 and a maximum of 500 characters. <code>mood_rating</code> must be between 1
-    and 5 inclusive.
+    Creates a new daily check-in. Accepts <code>multipart/form-data</code> to support the optional
+    progress photo upload. Days must be logged in order &mdash; day 2 cannot be submitted before
+    day 1 exists. On every 7th day, an AI-generated weekly summary is produced and returned
+    alongside the day.
   </p>
 
   <strong>Request Headers</strong>
   <pre>Authorization: Bearer &lt;valid-access-token&gt;</pre>
 
-  <strong>Request Body</strong>
+  <strong>Request Body</strong> &mdash; <code>multipart/form-data</code>
   <table>
     <thead>
       <tr>
@@ -850,89 +784,110 @@
       <tr>
         <td>diet_adhered</td>
         <td>boolean</td>
-        <td>Yes</td>
+        <td>No</td>
         <td>Must be a boolean, not a string</td>
       </tr>
       <tr>
         <td>outdoor_workout_completed</td>
         <td>boolean</td>
-        <td>Yes</td>
+        <td>No</td>
         <td>Must be a boolean, not a string</td>
       </tr>
       <tr>
         <td>indoor_workout_completed</td>
         <td>boolean</td>
-        <td>Yes</td>
+        <td>No</td>
         <td>Must be a boolean, not a string</td>
       </tr>
       <tr>
         <td>water_consumed</td>
         <td>boolean</td>
-        <td>Yes</td>
+        <td>No</td>
         <td>Must be a boolean, not a string</td>
       </tr>
       <tr>
         <td>pages_read</td>
         <td>boolean</td>
-        <td>Yes</td>
+        <td>No</td>
         <td>Must be a boolean, not a string</td>
       </tr>
       <tr>
         <td>mood_rating</td>
         <td>integer</td>
-        <td>Yes</td>
+        <td>No</td>
         <td>1&ndash;5 inclusive</td>
       </tr>
       <tr>
         <td>achievements</td>
         <td>string</td>
-        <td>Yes</td>
+        <td>No</td>
         <td>10&ndash;500 characters</td>
       </tr>
       <tr>
         <td>challenges</td>
         <td>string</td>
-        <td>Yes</td>
+        <td>No</td>
         <td>10&ndash;500 characters</td>
       </tr>
       <tr>
         <td>next_day_focus</td>
         <td>string</td>
-        <td>Yes</td>
+        <td>No</td>
         <td>10&ndash;500 characters</td>
+      </tr>
+      <tr>
+        <td>progress_pic</td>
+        <td>file</td>
+        <td>No</td>
+        <td>Image file. Uploaded as a file field.</td>
       </tr>
     </tbody>
   </table>
 
-  <pre>
-{
-  "day_number": 1,
-  "diet_adhered": true,
-  "outdoor_workout_completed": true,
-  "indoor_workout_completed": true,
-  "water_consumed": true,
-  "pages_read": true,
-  "mood_rating": 4,
-  "achievements": "Completed first day strong. Stuck to meal prep and both workouts.",
-  "challenges": "Morning workout felt rough. Body not used to early wake-ups.",
-  "next_day_focus": "Set alarm 15 minutes earlier to give more transition time."
+  <strong>Response (days 1&ndash;6, 8&ndash;13, etc.)</strong>&nbsp;<span class="status ok">201 Created</span>
+  <pre>{
+  "day": {
+    "day_number": 1,
+    "diet_adhered": true,
+    "outdoor_workout_completed": true,
+    "indoor_workout_completed": true,
+    "water_consumed": true,
+    "pages_read": true,
+    "mood_rating": 4,
+    "achievements": "Completed first day strong. Stuck to meal prep and both workouts.",
+    "challenges": "Morning workout felt rough. Body not used to early wake-ups.",
+    "next_day_focus": "Set alarm 15 minutes earlier to give more transition time.",
+    "progress_pic_url": "&lt;signed-url&gt;"
+  },
+  "weekly_summary": null
 }</pre>
 
-  <strong>Response</strong> &nbsp;<span class="status ok">201 Created</span>
-  <pre>
-{
-  "user_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "day_number": 1,
-  "diet_adhered": true,
-  "outdoor_workout_completed": true,
-  "indoor_workout_completed": true,
-  "water_consumed": true,
-  "pages_read": true,
-  "mood_rating": 4,
-  "achievements": "Completed first day strong. Stuck to meal prep and both workouts.",
-  "challenges": "Morning workout felt rough. Body not used to early wake-ups.",
-  "next_day_focus": "Set alarm 15 minutes earlier to give more transition time."
+  <strong>Response (every 7th day &mdash; day 7, 14, 21&hellip;)</strong>&nbsp;<span class="status ok">201
+    Created</span>
+  <pre>{
+  "day": {
+    "day_number": 7,
+    "diet_adhered": true,
+    "outdoor_workout_completed": true,
+    "indoor_workout_completed": true,
+    "water_consumed": true,
+    "pages_read": true,
+    "mood_rating": 4,
+    "achievements": "Completed first day strong. Stuck to meal prep and both workouts.",
+    "challenges": "Morning workout felt rough. Body not used to early wake-ups.",
+    "next_day_focus": "Set alarm 15 minutes earlier to give more transition time.",
+    "progress_pic_url": "&lt;signed-url&gt;"
+  },
+  "weekly_summary": {
+    "week": 1,
+    "summary": "&lt;AI-generated summary of the past 7 days&gt;"
+  }
 }</pre>
+  <p class="note">
+    The weekly summary is generated at the time of the day 7, 14, 21 &hellip; submission. It covers
+    the full preceding week and includes analysis of consistency, highlights, and suggested focus
+    areas for the week ahead.
+  </p>
 
   <strong>Error Responses</strong>
   <table>
@@ -946,7 +901,7 @@
     <tbody>
       <tr>
         <td><span class="status err">400</span></td>
-        <td><code>day_number</code> is missing from the request body</td>
+        <td><code>day_number</code> is missing</td>
         <td><code>day_number cannot be empty</code></td>
       </tr>
       <tr>
@@ -978,29 +933,65 @@
     </tbody>
   </table>
 
+  <!-- DELETE DAY -->
+  <h3>
+    <span class="method">DELETE</span> <span class="endpoint">/api/days/:day_number</span>
+  </h3>
+  <p class="desc">
+    Deletes the check-in record for a specific day. <code>day_number</code> must be between 1 and
+    75. Returns no body on success.
+  </p>
+
+  <strong>Request Headers</strong>
+  <pre>Authorization: Bearer &lt;valid-access-token&gt;</pre>
+
+  <strong>Response</strong>&nbsp;<span class="status ok">204 No Content</span>
+
+  <strong>Error Responses</strong>
+  <table>
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Condition</th>
+        <th>Error message</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="status err">400</span></td>
+        <td><code>day_number</code> is outside the 1&ndash;75 range</td>
+        <td><code>Day number must be between 1 and 75 inclusive</code></td>
+      </tr>
+      <tr>
+        <td><span class="status err">404</span></td>
+        <td>Day is within range but has not been logged</td>
+        <td><code>day number :day_number does not exist</code></td>
+      </tr>
+    </tbody>
+  </table>
+
   <hr />
 
+  <!-- MILESTONES -->
   <h2>Milestones</h2>
   <p>
     Milestones are awarded automatically when a user completes day 25, 50, or 75 with all tasks
-    checked off. They cannot be created or deleted manually. This endpoint returns whatever badges
-    have been earned so far.
+    checked off. They cannot be created or deleted manually.
   </p>
 
   <h3>
     <span class="method">GET</span> <span class="endpoint">/api/milestones</span>
   </h3>
   <p class="desc">
-    Returns all milestones earned by the authenticated user. Returns an empty array if none have
-    been awarded yet.
+    Returns all milestones earned by the authenticated user. Returns an empty array if none
+    have been awarded yet.
   </p>
 
   <strong>Request Headers</strong>
   <pre>Authorization: Bearer &lt;valid-access-token&gt;</pre>
 
-  <strong>Response</strong> &nbsp;<span class="status ok">200 OK</span>
-  <pre>
-[
+  <strong>Response</strong>&nbsp;<span class="status ok">200 OK</span>
+  <pre>[
   {
     "badge_type": "bronze",
     "awarded_at": "2024-09-25T21:00:00.000Z"
@@ -1034,6 +1025,58 @@
       <tr>
         <td><code>gold</code></td>
         <td>Day 75 completed with all tasks checked off</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr />
+
+  <!-- VALIDATION RULES -->
+  <h2 id="validation">Input Validation Rules</h2>
+
+  <h3>Password Requirements</h3>
+  <p>All passwords (on registration and password change) must satisfy the following:</p>
+  <ul>
+    <li>At least 8 characters long</li>
+    <li>At least one uppercase letter (A&ndash;Z)</li>
+    <li>At least one lowercase letter (a&ndash;z)</li>
+    <li>At least one digit (0&ndash;9)</li>
+    <li>At least one special character (e.g. <code>!</code>, <code>$</code>, <code>@</code>, <code>#</code>)</li>
+  </ul>
+
+  <h3>General Field Rules</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Field</th>
+        <th>Rule</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>email</td>
+        <td>Must be a valid email address format (e.g. <code>user@example.com</code>)</td>
+      </tr>
+      <tr>
+        <td>name</td>
+        <td>Minimum 3 characters</td>
+      </tr>
+      <tr>
+        <td>avatar_key</td>
+        <td>Must be one of: <code>avatar_1.png</code>, <code>avatar_2.png</code>, <code>avatar_3.png</code>,
+          <code>avatar_4.png</code></td>
+      </tr>
+      <tr>
+        <td>mood_rating</td>
+        <td>Integer between 1 and 5 inclusive</td>
+      </tr>
+      <tr>
+        <td>achievements, challenges, next_day_focus</td>
+        <td>Between 10 and 500 characters</td>
+      </tr>
+      <tr>
+        <td>Boolean fields (task completion)</td>
+        <td>Must be a JSON boolean (<code>true</code> / <code>false</code>), not a string</td>
       </tr>
     </tbody>
   </table>
