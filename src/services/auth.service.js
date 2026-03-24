@@ -30,14 +30,14 @@ export async function generateTokens(userId) {
   const tokenHash = hashToken(refreshToken);
   const expiresAt = getRefreshExpiry();
 
-  await tokenModel.saveToken(userId, tokenHash, expiresAt);
+  await tokenModel.create(userId, tokenHash, expiresAt);
 
   return { accessToken, refreshToken, expiresAt };
 }
 
 export async function verifyAndRotateToken(rawToken) {
   const tokenHash = hashToken(rawToken);
-  const storedToken = await tokenModel.getToken(tokenHash);
+  const storedToken = await tokenModel.create(tokenHash);
 
   if (!storedToken) return null;
 

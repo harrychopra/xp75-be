@@ -29,8 +29,14 @@ const validateName = (name, _) => {
 };
 
 const validateAvatarUrl = (url, _) => {
-  if (!/^(http|https):\/\/.*\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url)) {
+  if (!/^(http|https):\/\/.*\.(jpg|jpeg|png)$/i.test(url)) {
     throw new ApiError('Avatar must be a valid url', 400);
+  }
+};
+
+const validateAvatar = (url, _) => {
+  if (!/^avatar_[1-4]\.png$/i.test(url)) {
+    throw new ApiError('Avatar key not recognised', 400);
   }
 };
 
@@ -67,10 +73,9 @@ const validateLongText = (text, field) => {
 };
 
 export default function validate(requiredFields, data) {
-  const fieldFn = {
+  const validators = {
     email: validateEmail,
     name: validateName,
-    avatar_url: validateAvatarUrl,
     password: validatePassword,
     current_password: validatePassword,
     new_password: validatePassword,
@@ -83,11 +88,12 @@ export default function validate(requiredFields, data) {
     mood_rating: validateMoodRating,
     achievements: validateLongText,
     challenges: validateLongText,
-    next_day_focus: validateLongText
+    next_day_focus: validateLongText,
+    avatar_key: validateAvatar
   };
 
   for (const field of requiredFields) {
-    if (!fieldFn[field]) {
+    if (!validators[field]) {
       throw new Error(`Validator for field "${field}" not defined`);
     }
 
@@ -97,6 +103,6 @@ export default function validate(requiredFields, data) {
       throw new ApiError(`${field} cannot be empty`, 400);
     }
 
-    fieldFn[field](data[field], field);
+    validators[field](data[field], field);
   }
 }

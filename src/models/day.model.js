@@ -54,7 +54,7 @@ export async function findByWeek(userId, weekNumber) {
   return rows;
 }
 
-export async function insert(day) {
+export async function create(day) {
   const cols = Object.keys(day);
   const values = Object.values(day);
   const placeHolders = cols.map((_, idx) => `$${idx + 1}`);

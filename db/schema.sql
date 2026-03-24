@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS users(
   email varchar(255) NOT NULL UNIQUE,
   name varchar(100) NOT NULL,
   password_hash varchar(255) NOT NULL,
-  avatar_url text,
+  avatar_key text,
   created_at timestamptz NOT NULL DEFAULT NOW(),
   updated_at timestamptz NOT NULL DEFAULT NOW()
 );
@@ -52,7 +52,6 @@ CREATE TABLE days(
   achievements varchar(500),
   challenges varchar(500),
   next_day_focus varchar(500),
-  progress_pic_url text,
   progress_pic_key text,
   created_at timestamp DEFAULT NOW()
 );
