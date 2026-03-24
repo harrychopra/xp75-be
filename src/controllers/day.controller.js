@@ -35,7 +35,8 @@ export async function get(req, res, next) {
         achievements: day.achievements,
         challenges: day.challenges,
         next_day_focus: day.next_day_focus,
-        progress_pic_url: await getUrl(day.progress_pic_key)
+        progress_pic_url: await getUrl(day.progress_pic_key),
+        created_at: day.created_at
       },
       weekly_summary: summary
     });
@@ -61,7 +62,8 @@ export async function getAll(req, res, next) {
         achievements: day.achievements,
         challenges: day.challenges,
         next_day_focus: day.next_day_focus,
-        progress_pic_url: await getUrl(day.progress_pic_key)
+        progress_pic_url: await getUrl(day.progress_pic_key),
+        created_at: day.created_at
       };
     }
     res.status(200).json({
@@ -128,7 +130,8 @@ export async function create(req, res, next) {
         achievements: newDay.achievements,
         challenges: newDay.challenges,
         next_day_focus: newDay.next_day_focus,
-        progress_pic_url: await getUrl(newDay.progress_pic_key)
+        progress_pic_url: await getUrl(newDay.progress_pic_key),
+        created_at: day.created_at
       },
       weekly_summary: summary
     });
